@@ -1,0 +1,29 @@
+# Investigation Kit - Git Ignore
+
+# Environment variables (contains API tokens)
+.env
+.env.local
+.env.*.local
+
+# Hidden investigation folders (session-specific)
+.active-investigations/
+
+# Temporary files
+*.log
+*.tmp
+april4-*.json
+april4-*.md
+
+# PDFs (may contain sensitive info)
+*.pdf
+
+# Raw data dumps
+raw-data/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
