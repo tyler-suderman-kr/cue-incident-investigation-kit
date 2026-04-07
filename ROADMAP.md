@@ -1,19 +1,19 @@
 # Investigation Kit — Roadmap
 
-Ideas for extending scope and reducing manual overhead in investigations.
+Ideas for extending scope and reducing manual overhead in investigations, roughly ordered by priority.
 
 ---
 
-## 1. Teams Integration — Live Incident Channel Monitoring
+## 1. Namespace Mapper
 
-**Idea:** Hook into the major incident Teams channel in real-time so that context from other teams (error messages, status updates, workarounds) is available during an investigation without manually cross-referencing.
+**Idea:** A mapping layer that connects k8s namespace and workload names to owning teams, repos, and runbooks. For example: seeing `piksvc` in a Dynatrace error → Picking team → their Atlassian space → on-call contact.
 
-**Value:** During INC11638105, Jason's SSL cert finding was in a Teams work note — we only saw it because it was in the PDF. Real-time access would surface that kind of signal earlier and from channels we might not be watching.
+**Value:** The single biggest time sink in cross-team investigations is "who owns this?" During INC11638105, identifying `fullfill-prod` as Excitebike's service (not ours) required manual Teams searching. A namespace → team → repo → runbook table makes that instant and prevents chasing the wrong service entirely.
 
 **Open questions:**
-- Which Teams channels carry incident traffic? (major incident bridge, team-specific channels?)
-- Is there a webhook or Graph API integration available through AI enablement?
-- Read-only monitoring vs. the ability to post findings back to the channel
+- Does this already exist somewhere? Atlassian might have a service catalog, CMDB, or internal wiki page worth searching before building anything custom. The SNOW impacted CIs list (`FST-Cue`, `Arrivals Consumer Layer`, etc.) is a partial version of this.
+- If it doesn't exist, would it live in this repo as a maintained YAML/markdown table, or in a shared internal system?
+- How stable are namespace names? Renaming is common (we saw it with our own repos) — any map needs a maintenance story.
 
 ---
 
@@ -21,38 +21,44 @@ Ideas for extending scope and reducing manual overhead in investigations.
 
 **Idea:** Use the AI enablement team's ServiceNow integration to pull live incident data directly, rather than relying on exported PDFs.
 
-**Value:** PDFs are a snapshot — they miss updates that happen after export. Live SNOW data means the incident history, work notes, and assignment changes are always current. Would also allow proactive monitoring (e.g. alert when a P1/P2 is assigned to our CI).
+**Value:** PDFs are a snapshot — they miss updates after export. Live SNOW data means incident history, work notes, and assignment changes are always current. Would also allow proactive monitoring (e.g. alert when a P1/P2 is assigned to our CI).
 
 **Open questions:**
 - What does the AI enablement SNOW integration expose? (read incidents, query by CI, watch for new assignments?)
-- Are there equivalent integrations for Atlassian and Dynatrace that are worth evaluating alongside it?
+- Are there equivalent integrations for Atlassian and Dynatrace worth evaluating at the same time?
 - Authentication model — service account or user-delegated?
 
 ---
 
-## 3. GitHub + Atlassian Integration — Namespace Mapper and Repo Table
+## 3. Teams Integration — Live Incident Channel Monitoring
 
-**Idea:** Build a lightweight namespace/repo mapping layer so that log signals can be automatically connected to source code and documentation. For example: seeing `piksvc` namespace in a Dynatrace error → look up which repo owns it → pull relevant Atlassian runbooks → surface the right team contact.
+**Idea:** Hook into the major incident Teams channel in real-time so that context from other teams is available during an investigation without manually cross-referencing.
 
-**Value:** The biggest time sink in investigations is figuring out who owns what. During INC11638105, the `fullfill-prod` service in our namespace took manual Teams searching to identify. A namespace → team → repo → runbook table would make that instant.
-
-**Components this would need:**
-- A namespace-to-team mapping table (e.g. `aensys-prod` → Cue + Excitebike, `piksvc` → Picking team)
-- A repo table with ownership, primary Atlassian space, and on-call contact
-- GitHub integration to pull recent commits/PRs for a repo around an incident timestamp (did something deploy right before this?)
-- Atlassian lookup to fetch runbooks by namespace or service name
+**Value:** During INC11638105, Jason's SSL cert finding was in a Teams work note — we only saw it because it was in the PDF. Real-time access would surface that kind of signal earlier and from channels we might not be watching.
 
 **Open questions:**
-- Does Kroger have a service catalog or CMDB that already has some of this? (the SNOW impacted CIs list is close)
-- GitHub integration scope — public repo listing only, or can we query commit history?
-- How stable are namespace names? Renaming happens (we saw this with our own repos)
+- Which Teams channels carry incident traffic? (major incident bridge, team-specific channels?)
+- Is there a webhook or Graph API integration available through AI enablement?
+- Read-only monitoring vs. the ability to post findings back to the channel?
+
+---
+
+## 4. GitHub + Atlassian — Deployment Context During Investigations
+
+**Idea:** Given a repo and an incident timestamp, pull recent commits and open PRs to answer "did something deploy right before this?" Pair with Atlassian lookups to fetch relevant runbooks by service name.
+
+**Value:** Complements the namespace mapper — once you know which repo owns a service, being able to see its recent deploy history without leaving the investigation context saves a context switch.
+
+**Open questions:**
+- GitHub integration scope — commit history and PR listing, or broader?
+- This only makes sense after the namespace mapper exists to connect log signals to repos in the first place.
 
 ---
 
 ## Notes
 
-- AI enablement integrations should be evaluated together — SNOW, Atlassian, and Dynatrace may all have options and it's worth understanding the full surface before building custom tooling
-- The namespace mapper would be the highest-leverage single addition — it removes the "who owns this?" question that blocks almost every cross-team investigation
+- The namespace mapper is the highest-leverage starting point — it unblocks items 3 and 4 and reduces the most common manual step in any cross-team investigation.
+- AI enablement integrations (SNOW, Atlassian, Dynatrace) should be evaluated together to understand the full surface before building custom tooling.
 
 ---
 
