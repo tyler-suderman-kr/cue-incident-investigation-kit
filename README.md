@@ -7,7 +7,9 @@ A Claude-powered incident investigation tool for the Cue team.
 1. Place this repo as a sibling to your `cue`, `acl`, and `cqs` repos
 2. Generate a Dynatrace platform token (see `.env.example` for required scopes and instructions)
 3. Run `./setup.sh` in your terminal to configure API tokens
-4. Open this directory in Claude Code (`claude`) — it will guide the rest
+4. **Cut a branch for the investigation** — e.g. `git checkout -b investigation/INC11638105`
+5. Open this directory in Claude Code (`claude`) — it will guide the rest
+6. When the investigation is complete, open a PR to merge the `log/` entry into `main`
 
 ## Project Structure
 
