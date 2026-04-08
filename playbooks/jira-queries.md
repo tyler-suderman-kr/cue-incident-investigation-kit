@@ -1,6 +1,8 @@
 # Jira/Atlassian Search - Quick Reference
 
-**Use case:** Ad-hoc searches when you spot something suspicious in timeline analysis
+**Use case:** Ad-hoc searches when you spot something suspicious in timeline analysis, or to identify who owns an unfamiliar namespace during incident triage.
+
+**Namespace lookup:** If you encounter a namespace in Dynatrace logs that isn't in `architecture/namespace-inventory.md`, search Jira for the namespace name. Infra migration tickets (ICSART project) often name namespaces explicitly and identify the owning team/LOB. Update the inventory with whatever you find.
 
 ---
 
@@ -27,10 +29,11 @@ source .env
 # Simple text search across all Jira
 SEARCH="your keyword here"
 
-curl -s -X GET "https://${ATLASSIAN_DOMAIN}/rest/api/3/search" \
+curl -s -X POST "https://${ATLASSIAN_DOMAIN}/rest/api/3/search/jql" \
   -u "${ATLASSIAN_EMAIL}:${ATLASSIAN_TOKEN}" \
-  --data-urlencode "jql=text ~ \"${SEARCH}\" ORDER BY updated DESC" \
-  --get | jq -r '.issues[] | "\(.key): \(.fields.summary)"'
+  -H "Content-Type: application/json" \
+  -d "{\"jql\": \"text ~ \\\"${SEARCH}\\\" ORDER BY updated DESC\", \"maxResults\": 10, \"fields\": [\"summary\", \"status\", \"assignee\"]}" \
+  | jq -r '.issues[] | "\(.key): \(.fields.summary)"'
 ```
 
 ### Search by date range (e.g., "what changed around the incident time?")
@@ -40,10 +43,11 @@ curl -s -X GET "https://${ATLASSIAN_DOMAIN}/rest/api/3/search" \
 START_DATE="2026-04-06"
 END_DATE="2026-04-07"
 
-curl -s -X GET "https://${ATLASSIAN_DOMAIN}/rest/api/3/search" \
+curl -s -X POST "https://${ATLASSIAN_DOMAIN}/rest/api/3/search/jql" \
   -u "${ATLASSIAN_EMAIL}:${ATLASSIAN_TOKEN}" \
-  --data-urlencode "jql=updated >= \"${START_DATE}\" AND updated <= \"${END_DATE}\" ORDER BY updated DESC" \
-  --get | jq -r '.issues[] | "\(.key): \(.fields.summary) (updated: \(.fields.updated))"'
+  -H "Content-Type: application/json" \
+  -d "{\"jql\": \"updated >= \\\"${START_DATE}\\\" AND updated <= \\\"${END_DATE}\\\" ORDER BY updated DESC\", \"maxResults\": 20, \"fields\": [\"summary\", \"status\", \"updated\"]}" \
+  | jq -r '.issues[] | "\(.key): \(.fields.summary) (updated: \(.fields.updated))"'
 ```
 
 ### Get ticket details
